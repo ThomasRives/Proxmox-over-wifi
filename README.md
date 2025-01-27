@@ -15,8 +15,8 @@ Ethernet is no longer required !
 
 Connect to wifi:
 ```sh
-# Restrict permissions to avoid password leaks
-chmod 0600 /etc/network/interfaces
+# Restrict permissions to allow write only for administrators.
+chmod 0644 /etc/network/interfaces
 # Replace [myssid] with your box/router SSID
 # Replace [my_very_secret_passphrase] with the password to connect to it
 wpa_passphrase [myssid] [my_very_secret_passphrase] > /etc/wpa_supplicant/wpa_supplicant.conf
@@ -144,3 +144,7 @@ dhcp-host=MAC,IP_without_mask,hostname
 ```
 
 VMs and LXCs containers shall now obtain IP throught DHCP.
+
+# Special thanks 🎉
+
+- [hotswapster](https://github.com/hotswapster) for spoting an issue with the interfaces file permissions !
