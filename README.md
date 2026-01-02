@@ -71,6 +71,24 @@ network={
 }
 ```
 
+Then get all the interfaces available on your machine:
+```sh
+ip a | grep -E "^[^ ]" | cut -d ':' -f2
+```
+
+The Wifi interfaces usually starts with a **w**.
+Mine is **wlo1** for instance but it can start with something like **wlp**
+(this is not a full list, you can have something else on your side).
+
+And last but not least, edit `/etc/network/interfaces`, to add this:
+```sh
+# Configure the wifi interface identified just above with the wpa_supplicant
+# configuration
+auto [wifi_interface]
+iface [wifi_interface] inet dhcp
+        wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
 Reboot your Proxmox:
 ```sh
 reboot
@@ -94,15 +112,6 @@ For that, a NAT (or Network Address Translation) shall be configured.
 will be detailed.
 
 ## Configure the NAT
-
-First get all the interfaces available on your machine:
-```sh
-ip a | grep -E "^[^ ]" | cut -d ':' -f2
-```
-
-The Wifi interfaces usually starts with a **w**.
-Mine is **wlo1** for instance but it can start with something like **wlp**
-(this is not a full list, you can have something else on your side).
 
 To configure a NAT, the file `/etc/network/interfaces` shall be edited to look
 like:
@@ -167,10 +176,6 @@ nano /etc/dnsmasq.conf
 To have something like:
 
 ```sh
-# Add the proxmox as a domain
-address=/proxmox/[ip_that_can_be_reached_by_the_box]
-
-
 # Hosts dnsmasq on vmbr0, the bridge created just before
 interface=vmbr0
 
