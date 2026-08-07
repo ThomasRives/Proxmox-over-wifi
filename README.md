@@ -156,7 +156,7 @@ Variables in the configuration:
 | [wifi_interface] | The Wi-Fi interface you configured previously | wlp2s0 |
 | [Home_network] | The network used by all your *normal* devices | 192.168.1.0/24 |
 | [VMs_network] | The network where the VMs lives. It is a private network that is not inclueded in the home network. | 10.10.1.0/24 |
-| [Proxmox_host_IP] | The IP of the Proxmox host. It must be in the same network as your normal devices. | 192.168.1.34 |
+| [Proxmox_host_IP] | The IP of the Proxmox host. It must be in the same network as your VMs. | 10.10.1.34 |
 
 The configuration shall look like:
 ```txt
@@ -251,6 +251,7 @@ iface lo inet loopback
 auto [wifi_interface]
 iface [wifi_interface] inet dhcp
     wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+    pre-up ip addr add [reserved_home_network] dev wlp2s0
 
 auto vmbr0
 iface vmbr0 inet static
@@ -338,6 +339,7 @@ Verify ip_forward is enabled: `cat /proc/sys/net/ipv4/ip_forward` (should be `1`
 # Special Thanks🎉
 
 - [hotswapster](https://github.com/hotswapster) for spoting an issue with the interfaces file permissions !
+- [confusedcatgirl](https://github.com/confusedcatgirl) for spoting an error in the setup of Proxmox host IP in vmbr0 !
 
 # Final disclaimer
 
