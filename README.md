@@ -182,10 +182,11 @@ iface vmbr0 inet static
     post-down iptables -t nat -D POSTROUTING -s '[VMs_network]' -o [wifi_interface] -j MASQUERADE
 ```
 
-### Install DHCP server (dnsmasq)
+### Proxmox host static IP
 
-Dnsmasq will be used to give VMs automatic IP addresses:
-`apt install dnsmasq` (you are connected to internet so no need to reuse one of the technique above).
+For the rest of the tutorial, you may want to have a static IP for your Proxmox host.
+There are many ways to get a static IP and the chosen way is left to the user.
+I personnaly would recommand you to check your box settings to see how to assign a static IP to your equipments, but this is out of the scope of this tutorial.
 
 ### Edit the main config: `nano /etc/dnsmasq.conf`
 
@@ -251,7 +252,6 @@ iface lo inet loopback
 auto [wifi_interface]
 iface [wifi_interface] inet dhcp
     wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
-    pre-up ip addr add [reserved_home_network] dev wlp2s0
 
 auto vmbr0
 iface vmbr0 inet static
@@ -297,9 +297,9 @@ iface vmbr0 inet static
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
 
     # Route default traffic to the Wi-Fi interface
-    post-up ip route add default via $(ip route | grep wlp2s0 | awk '{print $3}') dev wlp2s0
+    post-up ip route add default via 192.168.1.1 dev wlp2s0
 
-    # Map Internal 10.10.10.x to Home 192.168.1.200.x
+    # Map Internal 10.10.10.x to Home 192.168.1.200/26
     post-up iptables -t nat -A POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-up iptables -t nat -A PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
 
@@ -307,7 +307,7 @@ iface vmbr0 inet static
     post-up ip route add local '192.168.1.200/26' dev wlp2s0
     post-up iptables -t raw -I PREROUTING -i fwbr+ -j CT --zone 1
 
-    post-down ip route del default via $(ip route | grep wlp2s0 | awk '{print $3}') dev wlp2s0
+    post-down ip route del default via 192.168.1.1 dev wlp2s0
     post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-down iptables -t nat -D PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
     post-down ip route del local '192.168.1.200/26' dev wlp2s0
