@@ -340,6 +340,7 @@ Verify ip_forward is enabled: `cat /proc/sys/net/ipv4/ip_forward` (should be `1`
 
 - [hotswapster](https://github.com/hotswapster) for spoting an issue with the interfaces file permissions !
 - [confusedcatgirl](https://github.com/confusedcatgirl) for spoting an error in the setup of Proxmox host IP in vmbr0 !
+- [ben-ba](https://github.com/ben-ba) for spoting a duplicate config
 
 # Final disclaimer
 
