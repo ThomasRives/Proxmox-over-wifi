@@ -261,9 +261,6 @@ iface vmbr0 inet static
     bridge-fd 0
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
 
-    # Route default traffic to the Wi-Fi interface
-    post-up ip route add default via $(ip route | grep [wifi_interface] | awk '{print $3}') dev [wifi_interface]
-
     # Map Internal 10.10.10.x to Home 192.168.1.200.x
     post-up iptables -t nat -A POSTROUTING -s '[VMs_network]' -o [wifi_interface] -j NETMAP --to '[reserved_home_network]'
     post-up iptables -t nat -A PREROUTING -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
@@ -272,7 +269,6 @@ iface vmbr0 inet static
     post-up ip route add local '[reserved_home_network]' dev [wifi_interface]
     post-up iptables -t raw -I PREROUTING -i fwbr+ -j CT --zone 1
 
-    post-down ip route del default via $(ip route | grep [wifi_interface] | awk '{print $3}') dev [wifi_interface]
     post-down iptables -t nat -D POSTROUTING -s '[VMs_network]' -o [wifi_interface] -j NETMAP --to '[reserved_home_network]'
     post-down iptables -t nat -D PREROUTING -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
     post-down ip route del local '[reserved_home_network]' dev [wifi_interface]
@@ -296,9 +292,6 @@ iface vmbr0 inet static
     bridge-fd 0
     post-up echo 1 > /proc/sys/net/ipv4/ip_forward
 
-    # Route default traffic to the Wi-Fi interface
-    post-up ip route add default via 192.168.1.1 dev wlp2s0
-
     # Map Internal 10.10.10.x to Home 192.168.1.200/26
     post-up iptables -t nat -A POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-up iptables -t nat -A PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
@@ -307,7 +300,6 @@ iface vmbr0 inet static
     post-up ip route add local '192.168.1.200/26' dev wlp2s0
     post-up iptables -t raw -I PREROUTING -i fwbr+ -j CT --zone 1
 
-    post-down ip route del default via 192.168.1.1 dev wlp2s0
     post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-down iptables -t nat -D PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
     post-down ip route del local '192.168.1.200/26' dev wlp2s0
