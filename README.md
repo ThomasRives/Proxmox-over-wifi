@@ -8,7 +8,7 @@ This guide is a personal workaround for homelab users who physically cannot run 
 If you are running Proxmox on production, **please use a wired connectivity** as it is the only officially supported method !
 
 Networking may break during system updates, kernel changes, or driver updates.
-I have no control over so if you experience some incompatibilities, feel free to open an issue !
+I have no control over it so if you experience some incompatibilities, feel free to open an issue !
 And if you find a fix, feel free to share it !
 
 
@@ -20,11 +20,18 @@ Before starting, ensure you have:
     - Temporary Ethernet Access: A cable or USB-Ethernet adapter to install packages initially.
     - A PC with internet connectivity and a USB Flash Drive: To download the dependencies and pass them to the Proxmox server using the USB.
 
+## Helpers scripts
+
+Some new scripts to help you setup your Proxmox with wifi.
+
+You can use `bundle.sh` to download the dependencies and package them.
+Then `install.sh` if you installed the dependencies manually and `install-offline.sh` if you also want to install the dependencies.
+
 ## 🚀 Phase 1: Installing Wi-Fi Drivers
 
 You need wpasupplicant and wireless-tools to connect to Wi-Fi.
 
-### You have temporary Ethernet access (easiest method for me)
+### (Option 1) You have temporary Ethernet access (easiest method for me)
 
 Connect your server to the router via Ethernet, open the Proxmox Shell, and run:
 
@@ -36,7 +43,7 @@ And that's it ! You can unplug the Ethernet cable !
 
 That's why it is the easiest method.
 
-### You have NO Ethernet access at all (hardest method but I tested it)
+### (Option 2) You have NO Ethernet access at all (hardest method but I tested it)
 
 If you cannot plug in a cable, you must download the packages on another computer.
 
@@ -139,7 +146,7 @@ Edit `/etc/network/interfaces` again. We will create a virtual bridge vmbr0 that
 
 For the configuration, keep in mind that your Wi-Fi network will be different from your VMs network. I advise you to use 2 standard private network:
 - 192.168.0.0/16
-- 172.16/12
+- 172.16.0.0/12
 - 10.0.0.0/8
 
 
@@ -264,6 +271,8 @@ iface vmbr0 inet static
     # Map Internal 10.10.10.x to Home 192.168.1.200.x
     post-up iptables -t nat -A POSTROUTING -s '[VMs_network]' -o [wifi_interface] -j NETMAP --to '[reserved_home_network]'
     post-up iptables -t nat -A PREROUTING -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
+    post-up iptables -t nat -A OUTPUT -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
+    post-up iptables -t nat -A POSTROUTING -s '[VMs_network]' -d '[VMs_network]' -j MASQUERADE
 
     # Handle ARP requests so the router sees the VMs
     post-up ip route add local '[reserved_home_network]' dev [wifi_interface]
@@ -271,6 +280,8 @@ iface vmbr0 inet static
 
     post-down iptables -t nat -D POSTROUTING -s '[VMs_network]' -o [wifi_interface] -j NETMAP --to '[reserved_home_network]'
     post-down iptables -t nat -D PREROUTING -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
+    post-down iptables -t nat -D OUTPUT -d '[reserved_home_network]' -j NETMAP --to '[VMs_network]'
+    post-down iptables -t nat -D POSTROUTING -s '[VMs_network]' -d '[VMs_network]' -j MASQUERADE
     post-down ip route del local '[reserved_home_network]' dev [wifi_interface]
     post-down iptables -t raw -D PREROUTING -i fwbr+ -j CT --zone 1
 ```
@@ -295,6 +306,8 @@ iface vmbr0 inet static
     # Map Internal 10.10.10.x to Home 192.168.1.200/26
     post-up iptables -t nat -A POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-up iptables -t nat -A PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
+    post-up iptables -t nat -A OUTPUT -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
+    post-up iptables -t nat -A POSTROUTING -s '10.10.10.0/24' -d '10.10.10.0/24' -j MASQUERADE
 
     # Handle ARP requests so the router sees the VMs
     post-up ip route add local '192.168.1.200/26' dev wlp2s0
@@ -302,6 +315,8 @@ iface vmbr0 inet static
 
     post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -o wlp2s0 -j NETMAP --to '192.168.1.200/26'
     post-down iptables -t nat -D PREROUTING -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
+    post-down iptables -t nat -D OUTPUT -d '192.168.1.200/26' -j NETMAP --to '10.10.10.0/24'
+    post-down iptables -t nat -D POSTROUTING -s '10.10.10.0/24' -d '10.10.10.0/24' -j MASQUERADE
     post-down ip route del local '192.168.1.200/26' dev wlp2s0
     post-down iptables -t raw -D PREROUTING -i fwbr+ -j CT --zone 1
 ```
@@ -315,8 +330,8 @@ Update `/etc/dnsmasq.conf` to serve the internal IPs (which are then mapped).
 For each VM:
 
 Set the network device to Bridge: vmbr0.
-Set the VM's internal IP to the mapped address (ex: if you want the VM to be 192.168.1.201, set the VM's internal IP to 10.10.10.1).
-Note: This can be confusing. The VM thinks it is 10.10.10.x, but the network sees it as 192.168.1.200+.
+Set the VM's internal IP to the mapped address (ex: if you want the VM to be 192.168.1.201, set the VM's internal IP to 10.10.10.201).
+Note: This can be confusing. The VM thinks it is 10.10.10.x, but the network sees it as 192.168.1.x.
 Alternatively, set the VM to Static IP 10.10.10.x and let the NAT handle the mapping.
 
 ## 🛠️ Troubleshooting
